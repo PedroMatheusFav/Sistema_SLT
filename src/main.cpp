@@ -1,9 +1,11 @@
 #include <algorithm>
 #include <iostream>
+#include <map>
 #include <set>
 #include <string>
 #include <vector>
 
+#include "Catalogo.hpp"
 #include "Dinheiro.hpp"
 #include "Efeito.hpp"
 #include "Habilidade.hpp"
@@ -169,6 +171,94 @@ static void testarEfeitos() {
     }
 }
 
+static void mostrarCatalogo(const Catalogo& c) {
+    std::cout << "  [H] ";
+    const std::map<int, Habilidade>& listaH = c.getListaH();
+    std::map<int, Habilidade>::const_iterator h = listaH.begin();
+    while (h != listaH.end()) {
+        std::cout << h->second.getEtiqueta() << " | ";
+        ++h;
+    }
+    std::cout << "\n";
+
+    std::cout << "  [I] ";
+    const std::map<int, Item>& listaI = c.getListaI();
+    std::map<int, Item>::const_iterator i = listaI.begin();
+    while (i != listaI.end()) {
+        std::cout << i->second.getEtiqueta() << " | ";
+        ++i;
+    }
+    std::cout << "\n";
+
+    std::cout << "  [E] ";
+    const std::set<Efeito>& listaE = c.getListaE();
+    std::set<Efeito>::const_iterator e = listaE.begin();
+    while (e != listaE.end()) {
+        std::cout << e->getNome() << " | ";
+        ++e;
+    }
+    std::cout << "\n";
+}
+
+static void testarCatalogo() {
+    std::cout << "\n=== CATALOGO ===\n";
+
+    Catalogo c;
+
+    c.addH("bola de fogo", "3x1", "dano", "joga fogo", 15);
+    c.addH("gelo", "2x2", "envenenado", "congela", 10);
+    c.addH("impulso", "1x1", "", "empurra", 5);
+    std::cout << "depois de add 3 habilidades:\n";
+    mostrarCatalogo(c);
+
+    std::cout << "add 'gelo' de novo -> "
+              << (c.addH("gelo", "9x9", "x", "y", 1) ? "entrou" : "recusado")
+              << " (nome repetido)\n";
+
+    std::cout << "remover 'gelo' -> "
+              << (c.removerH("gelo") ? "ok" : "falhou") << "\n";
+
+    // 'gelo' era o #2, agora e uma tumba. O proximo add deve pegar o #2.
+    c.addH("lamina de vento", "3x1", "dano", "corta", 12);
+    std::cout << "add 'lamina de vento' reaproveitou o id:\n";
+    mostrarCatalogo(c);
+
+    const Habilidade* porNome = c.buscarH("bola de fogo");
+    std::cout << "buscarH por nome 'bola de fogo' -> "
+              << (porNome != 0 ? porNome->getEtiqueta() : "nao achou") << "\n";
+
+    const Habilidade* porId = c.buscarH(3);
+    std::cout << "buscarH por id #3 -> "
+              << (porId != 0 ? porId->getEtiqueta() : "nao achou") << "\n";
+
+    const Habilidade* tumba = c.buscarH(4);
+    std::cout << "buscarH pelo id livre #4 -> "
+              << (tumba != 0 ? tumba->getEtiqueta() : "nao achou") << "\n";
+
+    c.addI("espada", 50, 10, "arma branca", "", true);
+    c.addI("maca", 5, 1, "comida", "curar", false);
+    c.removerI("espada");
+    c.addI("pocao de vida", 30, 1, "recupera vida", "curar", false);
+    std::cout << "itens (removi o #1 'espada' e adicionei outra):\n";
+    mostrarCatalogo(c);
+
+    c.addE("envenenado");
+    c.addE("curar");
+    c.addE("envenenado");
+    std::cout << "addE 'envenenado' 2x -> "
+              << (c.addE("envenenado") ? "entrou" : "recusado") << "\n";
+
+    c.finalizar();
+    std::cout << "finalizado? " << (c.estaFinalizado() ? "sim" : "nao")
+              << "\n";
+    std::cout << "add depois de finalizar -> "
+              << (c.addH("defesa magica", "1x1", "", "escudo", 8) ? "entrou"
+                                                                 : "recusado")
+              << "\n";
+    std::cout << "remover depois de finalizar -> "
+              << (c.removerH("impulso") ? "ok" : "recusado") << "\n";
+}
+
 int main() {
     testarVida();
     testarMana();
@@ -176,5 +266,6 @@ int main() {
     testarItens();
     testarHabilidades();
     testarEfeitos();
+    testarCatalogo();
     return 0;
 }
