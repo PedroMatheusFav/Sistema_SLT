@@ -22,7 +22,8 @@ static std::string semEspacos(const std::string& texto) {
 
 // Diz se o texto tem aquele efeito exato (token por token, separado por ';').
 // Comparar o texto inteiro nao serve: "naoreviver" nao e "reviver".
-static bool temEfeito(const std::string& texto, const std::string& alvo) {
+bool Personagem::contemEfeito(const std::string& texto,
+                              const std::string& alvo) {
     std::string::size_type inicio = 0;
     while (inicio <= texto.size()) {
         std::string::size_type fim = texto.find(';', inicio);
@@ -204,7 +205,7 @@ bool Personagem::usarItem(const std::string& nome, int valor,
     }
 
     const std::string efeito = itens[i].getEfeitoCausado();
-    bool ehReviver = temEfeito(efeito, "reviver");
+    bool ehReviver = contemEfeito(efeito, "reviver");
 
     // Regra 9: morto so usa o item de reviver.
     if (!vivo && !ehReviver) {

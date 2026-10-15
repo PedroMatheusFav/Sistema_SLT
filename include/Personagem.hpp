@@ -100,6 +100,11 @@ public:
     // Remove os efeitos nas posicoes (1, 2, 3...) que aparecem na tela.
     bool limparEfeitos(const std::vector<int>& posicoes);
 
+    // Diz se um texto de efeitos (ex.: "dano; envenenado") tem aquele efeito
+    // como pedaco exato. A interface usa isto para saber se pergunta o valor.
+    static bool contemEfeito(const std::string& textoDeEfeitos,
+                             const std::string& efeito);
+
     // --- status ---
     void morrer();
     void reviver();  // volta com 1 de vida

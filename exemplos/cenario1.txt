@@ -1,0 +1,40 @@
+dois
+2
+4
+Teste
+100
+50
+200
+5
+2
+1
+#7 maca
+1
+#1 espada
+3
+#7 maca
+15
+6
+0
+3
+5
+#3 envenenamento em area
+1
+envenenamento em area
+4
+envenenamento em area
+0
+1
+
+4
+1
+2
+1
+0
+5
+1
+50
+3
+0
+0
+0
