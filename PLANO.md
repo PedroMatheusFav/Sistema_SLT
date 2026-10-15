@@ -126,7 +126,8 @@ sistema`) já cobre tudo; só mudo se algum arquivo precisar entrar.
 
 ### Etapa 5 — Saves
 - Cria `Save` e `Saves` com 3 espaços, `configurado`, troca e exclusão (com a
-  pergunta "vivo/morto").
+  pergunta "vivo/morto"; apagar zera o save inteiro e o catálogo volta ao
+  padrão).
 - Testar a troca entre os 3 e a exclusão de um save.
 - Commit: "etapa 5: os 3 saves".
 
@@ -134,7 +135,8 @@ sistema`) já cobre tudo; só mudo se algum arquivo precisar entrar.
 - Cria a `Interface` e o `main` final: tela de saves, painel do mestre, menu
   do jogador, e a leitura robusta (texto onde se espera número → erro e
   repete). Quando o item/habilidade tem efeito `curar` ou `dano`, a interface
-  pergunta o valor antes de aplicar.
+  pergunta o valor antes de aplicar; efeitos separados por `;`; texto de uso
+  neutro; com status morto só aparece a opção de usar o item de reviver.
 - Cria `exemplos/cenario1.txt` e roda.
 - Commit: "etapa 6: interface em modo texto".
 
@@ -143,11 +145,19 @@ sistema`) já cobre tudo; só mudo se algum arquivo precisar entrar.
   atualiza o `README.md` (comando de compilação, se mudou).
 - Commit: "etapa 7: exemplos e ajustes".
 
-## 8. Decisões e pontos a confirmar
+## 8. Decisões
 
 - Efeitos com valor (`curar` e `dano`): o valor é **digitado pelo jogador na
   hora** de usar. A interface pergunta e passa por parâmetro para a lógica;
   os outros efeitos são só nome.
+- Mais de um efeito no texto é separado por **ponto e vírgula**
+  (ex.: `dano 40; envenenado; fadiga`).
+- Com status morto, a única ação permitida é **usar o item de reviver**; o
+  personagem volta com 1 de vida.
+- Apagar a ficha **zera o save inteiro** (o catálogo volta ao padrão e o
+  mestre monta o mundo de novo).
+- O texto ao usar habilidade é **neutro**, sem citar "o inimigo": descreve só
+  os efeitos aplicados.
 - A bolsa guarda uma cópia do item com o id do catálogo só para mostrar a
   etiqueta; o preço usado é o preço pago. Se preferir sem id na bolsa, é
   fácil tirar.

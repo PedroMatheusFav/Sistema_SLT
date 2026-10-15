@@ -123,6 +123,13 @@ ações dinheiro:
 
 13. quando o efeito é curar ou dano, o valor é perguntado ao jogador na hora.
 
+14. - efeitos separados por ";";
+    - morto só usa o item de reviver (volta com 1 de vida);
+    - apagar ficha zera o save (o mestre monta o mundo de novo);
+    - texto de uso neutro.
+
+
+
 ## Quando algo dá errado
 
 deve mostrar um texto explicando o erro, por exemplo: habilidade x não pertence ao personagem y portanto nao pode ser usada.
