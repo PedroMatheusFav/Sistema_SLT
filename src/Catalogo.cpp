@@ -194,3 +194,42 @@ void Catalogo::finalizar() {
 bool Catalogo::estaFinalizado() const {
     return finalizado;
 }
+
+void Catalogo::carregarPadrao() {
+    // Comeca do zero e destrava, para o mestre poder ajustar depois.
+    listaH.clear();
+    listaI.clear();
+    listaE.clear();
+    finalizado = false;
+
+    // listaE: efeitos possiveis.
+    addE("envenenado");
+    addE("regeneracao");
+    addE("curar");
+    addE("dano");
+    addE("recuperar");
+    addE("reviver");
+
+    // listaH: habilidades possiveis. Os ids saem 1..5 nesta ordem.
+    addH("bola de fogo e gelo", "3x1", "dano", "lanca fogo e gelo", 15);
+    addH("lamina de vento", "3x1", "dano", "corta em linha reta", 12);
+    addH("envenenamento em area", "4x4", "envenenado", "envenena a area", 20);
+    addH("defesa magica", "1x1", "curar", "escudo magico", 10);
+    addH("impulso", "1x1", "", "empurra o alvo", 5);
+
+    // listaI: itens possiveis. Os ids saem 1..10 nesta ordem.
+    // 3 armas brancas
+    addI("espada", 50, 50, "arma branca simples", "", true);
+    addI("machado", 60, 60, "arma branca pesada", "", true);
+    addI("adaga", 30, 30, "arma branca leve", "", true);
+    // 1 arma de longo alcance
+    addI("arco", 70, 40, "arma de longo alcance", "", true);
+    // 2 sets de armadura
+    addI("armadura de couro", 40, 40, "armadura leve", "", true);
+    addI("armadura de ferro", 80, 60, "armadura pesada", "", true);
+    // comidas e pocoes (nao remendaveis)
+    addI("maca", 5, 1, "comida", "curar", false);
+    addI("pocao de vida", 30, 1, "recupera vida", "curar", false);
+    addI("pocao de mana", 30, 1, "recupera mana", "recuperar", false);
+    addI("pocao de reviver", 30, 1, "traz de volta a vida", "reviver", false);
+}

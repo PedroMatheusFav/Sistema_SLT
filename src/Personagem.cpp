@@ -400,6 +400,10 @@ void Personagem::aplicarTexto(const std::string& texto, int valor,
         if (token == "curar") {
             vida.curar(valor);
             partes.push_back("curou " + std::to_string(valor));
+        } else if (token == "recuperar") {
+            // Como curar/dano, usa o valor digitado na hora.
+            mana.recuperar(valor);
+            partes.push_back("recuperou " + std::to_string(valor) + " de mana");
         } else if (token == "dano") {
             bool zerou = dano(valor);
             partes.push_back("levou " + std::to_string(valor) + " de dano");

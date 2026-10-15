@@ -13,6 +13,8 @@
 #include "Item.hpp"
 #include "Mana.hpp"
 #include "Personagem.hpp"
+#include "Save.hpp"
+#include "Saves.hpp"
 #include "Vida.hpp"
 
 // main TEMPORARIO: so serve para testar as classes das etapas 1 e 2.
@@ -450,6 +452,134 @@ static void testarPersonagem() {
               << (q.dano(10) ? "zerou" : "nao fez nada") << "\n";
 }
 
+static void mostrarSaves(const Saves& s) {
+    for (int i = 0; i < s.getQuantidade(); ++i) {
+        std::cout << "  " << (i + 1) << ". Save " << (i + 1) << " - ";
+        if (s.slotVazio(i)) {
+            std::cout << "vazio\n";
+        } else {
+            const Personagem& p = s.get(i).getPersonagem();
+            std::cout << p.getNome() << " ("
+                      << (p.estaVivo() ? "vivo" : "morto") << " | "
+                      << p.getVidaAtual() << "/" << p.getVidaMaxima() << ")\n";
+        }
+    }
+    std::cout << "  (ativo: save " << (s.getAtivoIndice() + 1) << ")\n";
+}
+
+static void mostrarContagem(const Catalogo& c) {
+    std::cout << c.getListaH().size() << " habilidades, "
+              << c.getListaI().size() << " itens, " << c.getListaE().size()
+              << " efeitos";
+}
+
+static void testarCatalogoPadrao() {
+    std::cout << "\n=== CATALOGO PADRAO ===\n";
+
+    Catalogo c;
+    c.carregarPadrao();
+    std::cout << "carregarPadrao -> ";
+    mostrarContagem(c);
+    std::cout << "\n";
+    mostrarCatalogo(c);
+    std::cout << "finalizado? " << (c.estaFinalizado() ? "sim" : "nao")
+              << " (o mestre ainda pode mexer)\n";
+
+    // Carregar de novo nao duplica nada.
+    c.carregarPadrao();
+    std::cout << "carregarPadrao de novo -> ";
+    mostrarContagem(c);
+    std::cout << "\n";
+}
+
+static void testarSaves() {
+    std::cout << "\n=== SAVES ===\n";
+
+    Saves s;
+    std::cout << "estado inicial (todo save ja vem com o mundo padrao):\n";
+    mostrarSaves(s);
+    for (int i = 0; i < s.getQuantidade(); ++i) {
+        std::cout << "  catalogo do save " << (i + 1) << ": ";
+        mostrarContagem(s.get(i).getCatalogo());
+        std::cout << "\n";
+    }
+
+    // --- save 1: o mestre ajusta o mundo padrao e cria o personagem ---
+    s.trocar(0);
+    Save& um = s.getAtivo();
+    um.getCatalogo().removerH("impulso");  // tira a #5
+    um.getCatalogo().addH("cura em grupo", "3x3", "curar", "cura o time", 18);
+    um.getCatalogo().finalizar();
+    um.criarPersonagem("Cleber", 100, 50, 200);
+    std::cout << "\nconfigurado o save 1 (tirei 'impulso' e pus 'cura em grupo'):\n";
+    std::cout << "  ";
+    mostrarContagem(um.getCatalogo());
+    std::cout << "\n";
+    mostrarSaves(s);
+
+    // --- save 2 ---
+    s.trocar(1);
+    s.getAtivo().criarPersonagem("Bianca", 80, 40, 100);
+    s.getAtivo().getPersonagem().dano(30);  // Bianca com 50/80
+    std::cout << "\nconfigurado o save 2 (Bianca levou 30 de dano):\n";
+    mostrarSaves(s);
+
+    std::cout << "\ncriar um 2o personagem no save 2 -> "
+              << (s.getAtivo().criarPersonagem("Outro", 10, 10, 0) ? "ok"
+                                                                   : "recusado")
+              << " (1 personagem por save)\n";
+
+    std::cout << "trocar para o save 9 -> "
+              << (s.trocar(8) ? "ok" : "recusado") << "\n";
+
+    // --- excluir: a interface monta a pergunta com o status ---
+    std::cout << "\napagar o save 1:\n";
+    const Personagem& p1 = s.get(0).getPersonagem();
+    std::cout << "  \"deseja apagar a ficha de " << p1.getNome() << " "
+              << (p1.estaVivo() ? "vivo?" : "morto?") << "\" -> confirmado\n";
+    s.excluir(0);
+
+    const Catalogo& cat1 = s.get(0).getCatalogo();
+    std::cout << "  catalogo do save 1: ";
+    mostrarContagem(cat1);
+    std::cout << "\n";
+    std::cout << "  ganhou 'impulso' de volta? "
+              << (cat1.buscarH("impulso") != 0 ? "sim" : "nao")
+              << " | perdeu 'cura em grupo'? "
+              << (cat1.buscarH("cura em grupo") == 0 ? "sim" : "nao")
+              << " | finalizado? "
+              << (cat1.estaFinalizado() ? "sim" : "nao") << "\n";
+    std::cout << "  save 1 vazio de novo? "
+              << (s.slotVazio(0) ? "sim" : "nao") << "\n";
+    mostrarSaves(s);
+}
+
+static void testarPocaoDeMana() {
+    std::cout << "\n=== POCAO DE MANA (efeito recuperar) ===\n";
+
+    Catalogo c;
+    c.addE("recuperar");
+    c.addI("pocao de mana", 30, 1, "recupera mana", "recuperar", false);
+    c.finalizar();
+
+    Personagem p("Bianca", 100, 50, 100);
+    std::string msg;
+
+    p.comprar(*c.buscarI("pocao de mana"));
+    p.gastarMana(45);  // mana 5/50
+    std::cout << "mana antes de usar: " << p.getManaAtual() << "/"
+              << p.getManaMaxima() << "\n";
+
+    p.usarItem("pocao de mana", 20, c, msg);
+    std::cout << msg << " | mana: " << p.getManaAtual() << "/"
+              << p.getManaMaxima() << "\n";
+
+    p.comprar(*c.buscarI("pocao de mana"));
+    p.usarItem("pocao de mana", 999, c, msg);
+    std::cout << msg << " | mana: " << p.getManaAtual() << "/"
+              << p.getManaMaxima() << " (trava no maximo)\n";
+}
+
 int main() {
     testarVida();
     testarMana();
@@ -458,6 +588,9 @@ int main() {
     testarHabilidades();
     testarEfeitos();
     testarCatalogo();
+    testarCatalogoPadrao();
     testarPersonagem();
+    testarPocaoDeMana();
+    testarSaves();
     return 0;
 }

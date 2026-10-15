@@ -70,6 +70,10 @@ public:
     // Trava o mundo: o mestre nao mexe mais em nada.
     void finalizar();
     bool estaFinalizado() const;
+
+    // Volta as tres listas para o padrao descrito na DESCRICAO.md
+    // (e desfinaliza). Usado quando um save novo comeca.
+    void carregarPadrao();
 };
 
 #endif
