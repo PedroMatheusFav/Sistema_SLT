@@ -1,8 +1,5 @@
 # Descrição do sistema
 
-Escreva este arquivo sem IA, antes de qualquer código. Apague as instruções
-em itálico quando preencher.
-
 ## Nome e ideia
 
 Vou fazer a ideia do Inventario de RPG, vai servir para jogadores de RPG de mesa e tera um diferencial de contar vida, mana e habilidades.
@@ -10,73 +7,119 @@ Vou fazer a ideia do Inventario de RPG, vai servir para jogadores de RPG de mesa
 ## O que o sistema guarda
 
 Listas (somente o mestre pode modificar):
-    listaH: guarda todas as habilidades possiveis (as habilidades tem nome, area_total_afetada, area_afetada, efeito_causado, descrição, custo).
-    listaI: guarda todos os itens possiveis (os itens tem nome, preço, quantidade, descrição).
+    listaH: guarda todas as habilidades possíveis. Cada habilidade tem nome,
+    área afetada (ex.: 3x1), efeito_causado (um ou mais efeitos), descrição e
+    custo (em mana).
+    listaI: guarda todos os itens possíveis. Cada item tem nome, preço,
+    durabilidade máxima, descrição, efeito_causado (pode ser vazio/NULL) e se
+    é remendável (sim ou não). Comidas, poções e livros não são remendáveis;
+    espadas e armaduras são.
+    listaE: guarda todos os efeitos possíveis. Cada efeito tem só nome.
 
-personagem:
-    localização_batalha: matriz_localização, passos;
-    itens: nome, preço, quantidade, descrição, efeito_causado;
-    vida: quatidade_V, quantidadeMAX_V ;
-    mana: quantidade_M, quantidadeMAX_M ; 
+listas por padrão:
+    listaI: 3 armas brancas, 1 arma de longo alcance, 2 sets de armadura,
+    maçã, poção de vida, poção de mana e poção de reviver.
+    listaH: bola de fogo e gelo, lâminas de vento, envenenamento em área,
+    defesa mágica, impulso.
+    listaE: envenenado, regeneração, curar, dano, reviver.
 
-    habilidades: nome, area_total_afetada, area_afetada, efeito_causado, descrição, custo (area_afetada = matriz mostrando a area no mapa que sera afetada, se for uma matriz 3x3 que vai ser afetada então fica 111111111 se for só uma linha vertical de 3x1 então fica 010010010 e uma reta vertical é a mesma coisa que uma reta horizontal, ja que o personagem pode se virar para lançar o poder, então se o inimigo estiver dentro da area de 3x3 então será acertado pelo ataque de 3x1 a pergunta que fica é se os outros personagems vão estar no meio do caminho do 3x1, se isso acontecer então esses tambem vao receber o dano, caso o efeito_causado for um ataque em area. Pensando nisso vou adicionar a area total afetada que será o 3x3 total e a area_afetada será só a area onde o ataque realmente afeta 3x1. Ao inves de contar como binario que em mapas muito grandes daria numeros gigantes, eu vou contar como posições em um xadrez d9, e5 e etc, caso o mapa seja maior que z26 então começa a usar combinações de 2 letras por exempli aa1, ab1, ac1 e etc)(efeito_causado = nome do efeito + valor, exemplo "curar 40");
+Cada entrada recebe um id no formato "#x nome", com x começando em 1. Ao
+remover, a posição vira uma tumba (Null) e é reaproveitada pela próxima
+entrada adicionada.
 
-    dinheiro: quantidade_dinheiro, extrato;
+personagem (1 por save):
+    nome e status (vivo ou morto);
+    vida: quantidade atual e quantidade máxima;
+    mana: quantidade atual e quantidade máxima;
+    dinheiro: quantidade e extrato (lista de textos do que entrou e saiu);
+    itens: cópia do item comprado (nome, preço pago, durabilidade atual,
+    descrição, efeito_causado);
+    habilidades: cópia da habilidade aprendida (nome, área afetada,
+    efeito_causado, descrição, custo);
+    efeitos: lista de nomes de efeitos ativos. Um mesmo efeito pode aparecer
+    várias vezes (ex.: 2x envenenado).
 
 ## O que dá para fazer
 
-(a listaI por padrão deve ter 3 armas branca, 1 arma de longo alcance, 2 tipos de set de armadura, maçã e poções de mana e vida)
-(a listaH por padrão deve ter bola de fogo e gelo, laminas de vento, envenenamento em area, defesa magica, impulso)
+No começo o programa mostra a tela de saves, com 3 espaços. Se o espaço está
+vazio, o modo mestre abre para montar o mundo e criar 1 personagem; se já
+está pronto, abre direto o modo jogador. O jogador pode trocar entre os 3
+espaços a qualquer momento.
+
 ações listas:
-    Mestre_add_H: entra nome, area_total_afetada, area_afetada, efeito_causado, descrição, custo => adiciona habilidade na lista de habilidades e modifica nome para "#x nome" sendo x a posição da habilidade dentro da lista.
-    Mestre_remover_H: entra nome => pega o #x procura na lista e remove a habilidade na posição x.
-    Mestre_add_I: mesma coisa que o add_H soque pra lista de itens.
-    Mestre_remover_I: mesma coisa que o remover_H soque pra lista de itens.
+    Mestre_add_H: entra nome, área afetada, efeito_causado, descrição e custo => adiciona em listaH como "#x nome".
+    Mestre_remover_H: entra nome => acha o "#x" e esvazia a posição (tumba).
+    Mestre_add_I: mesma coisa que o add_H, só que para lista de itens (entra nome, preço, durabilidade máxima, descrição, efeito_causado, remendável).
+    Mestre_remover_I: mesma coisa que o remover_H, só que para lista de itens.
+    Mestre_add_E: entra nome => adiciona em listaE.
+    Mestre_remover_E: entra nome => esvazia a posição.
+    Mestre_finalizar_mundo: trava as listas e vai para o modo jogador.
 
 ações personagem:
-    criar_novo_personagem: entra nome_personagem, valor_vidaMAX, valor_manaMAX, valor_dinheiro => personagem criado;
-    morrer: entra nome_personagem => personagem x morreu && rola d20, se valor <= 10 então deletar ficha x, se não então personagem volta com 1 de vida;
-    mover: entra cordenada => if(personagem(passos) <= distancia até cordenada) então matriz_localização modificada para cordenada;
-    status_personagem: entra nome => mostra todos os status do personagem em uma interface de texto (para mostrar a aba de habilidades ele mostra nome_habilidade, custo, efeito_causado, area_afetada sendo que a area afetada ele mostra como matriz, entao ele diz 4x4 afetada ou 3x1 afetada, caso o player queira mais informação ele deve usar o comando "status_habilidade");
+    criar_novo_personagem: entra nome, vida máxima, mana máxima e dinheiro inicial => personagem criado;
+    status_personagem: entra nome => mostra todos os status do personagem em uma interface de texto (na aba de habilidades mostra nome_habilidade, custo, efeito_causada e área afetada; quem quiser mais detalhe usa "status_habilidade");
+    trocar_personagem: muda o save ativo;
+    excluir_ficha: entra o número do save => pergunta "deseja apagar a ficha de Cleber vivo?" (ou "morto?") e, se confirmar, apaga;
+    ver_efeitos: mostra a lista numerada dos efeitos ativos no personagem;
+    limpar_efeitos: mostra a lista numerada e o jogador digita os números que quer tirar; a leitura repete até digitar "n" ou até acabarem os efeitos.
 
-ações item: 
-    adicionar: entra nome => item(nome) in listaI adiciona na ficha (todo nome tem um id, ex: "#27 maçã" então então vai procurar listaI[27-1]) && gastar(itens(preço));
-    usar: entra nome => -1 quantidade && print(descrição) && aplicar efeito_causado;
-    remendar: entra nome_item, valor_pago => quantidade_item = rount(valor_pago / 2);
-    lixo: entra nome_item => deleta item selecionado;
+ações item:
+    comprar/adicionar: entra nome (com id, ex.: "#27 maçã") => procura em listaI, confere o dinheiro, copia o item para a ficha e desconta o preço;
+    vender: entra nome => soma o preço ao dinheiro e remove o item da ficha;
+    usar: entra nome => -1 durabilidade, imprime a descrição e aplica o efeito_causado. Se o item for um livro (efeito "aprender"), o personagem aprende a habilidade de mesmo nome;
+    remendar: entra nome_item e valor_pago => só item remendável: durabilidade = durabilidade + round(valor_pago / 2), sem passar da máxima, e desconta o valor_pago do dinheiro. Item não remendável dá erro;
+    lixo: entra nome_item => deleta o item da ficha.
 
 ações vida:
-    curar: entra quantidadeMAX_V, quantidade_V, valor_int => (quantidade_V + valor_int) < quantidadeMAX_V ;
-    dano: entra quantidade_V, valor_int => (quantidade_V - valor_int) > 0 && if((quantidade_V - dano) <= 0): personagem morrer;
-    veneno: entra quantidade_V, turnos_afetados, valor_int => a cada (turnos_afetados) turno o personagem leva (valor_int) de dano na (quantidade_V);
-    regeneração: entra quantidade_V, turnos_afetados, valor_int => a cada (turnos_afetados) turno o personagem leva (valor_int) de cura na (quantidade_V);
-    aumentarMAX: entra quantidadeMAX_V, valor_int => quantidadeMAX_V = (quantidadeMAX_V + valor_int);
-    diminuirMAX: entra quantidadeMAX_V, valor_int => quantidadeMAX_V = (quantidadeMAX_V - valor_int);
+    curar: entra valor => soma na vida e trava no máximo;
+    dano: entra valor => subtrai da vida; se chegar a 0, o personagem fica
+    morto;
+    aumentarMAX: entra valor => muda a vida máxima;
+    diminuirMAX: entra valor => muda a vida máxima.
 
 ações mana:
-    recuperar: curar(quantidadeMAX_M, quantidade_M, valor_int);
-    gastarMANA: dano(quantidade_M, valor_int);
-    gastar_turnos: veneno(quantidade_M, turnos_afetados, valor_int);
-    recuperar_turnos: regeneração(quantidade_M, turnos_afetados, valor_int);
-    aumentarMAX: entra quantidadeMAX_M, valor_int => quantidadeMAX_M = (quantidadeMAX_M + valor_int);
-    diminuirMAX: entra quantidadeMAX_M, valor_int => quantidadeMAX_M = (quantidadeMAX_M - valor_int);
+    recuperar: entra valor => soma na mana e trava no máximo;
+    gastar: entra valor => subtrai da mana;
+    aumentarMAX: entra valor => muda a mana máxima;
+    diminuirMAX: entra valor => muda a mana máxima.
 
 ações habilidade:
-    adicionar: entra nome => habilidade(nome) in listaH adiciona na ficha;
-    remover: entra nome => deleta habilidade;
-    evoluir: entra nome, valor_area, str_efeito => area_afetada = scanf(valor_area), efeito_causado = scanf(str_efeito), custo = custo * 1.5
-    usar: entra nome_habilidade, nome_personagem => if(personagem(localização(matriz_localização)) in habilidade(area_total_afetada)) então aplicar habilidade(efeito_causado) no personagem && gastarMANA(quantidade_M, habilidade(custo));
-    parar: entra nome => if(habilidade(nome) == ativada) então desativa;
-    status_habilidade: entra nome => printf(nome, area_total_afetada, area_afetada, efeito_causado, descrição, custo)
+    adicionar/aprender: entra nome => copia a habilidade de listaH para a ficha (normalmente usando o livro);
+    remover: entra nome => deleta a habilidade da ficha;
+    modificar: entra nome => muda qualquer atributo só da cópia daquele personagem;
+    usar: entra nome_habilidade => confere a mana, desconta o custo e aplica o efeito_causado na lista de efeitos do personagem; imprime no terminal o que aconteceu (ex.: "o inimigo tomou 40 de dano, envenenamento, fadiga");
+    status_habilidade: entra nome => mostra nome, área afetada, efeito_causado, descrição e custo.
 
 ações dinheiro:
-    gastar: entra valor_int => {quantidade_dinheiro = quantidade_dinheiro - valor_int || if(quantidade_dinheiro - valor_int < 0) então quantidade_dinheiro = 0} && adiciona str no extrato gastou x; 
-    receber: entra valor_int => quantidade_dinheiro = quantidade_dinheiro + valor_int && adiciona str no extrato recebeu x;
-    ///status_: entra null => printf(quantidade_dinheiro, extrato);
+    gastar: entra valor => se não tiver o valor, dá erro; senão desconta e
+    registra "gastou x" no extrato;
+    receber: entra valor => soma e registra "recebeu x" no extrato.
 
 ## Regras
 
-não tem nenhum sistema para personagens que voam, as ações de evoluir habilidade e adicionar habilidade devem ser feitas com o auxilio do mestre do RPG, para que o player nao tenha uma habilidade com dano infinito, o dono de um personagem nao pode alterar os status dos outros personagens ou npc, somente o mestre pode interagir com todas as fichas de todos os personagens, os personagens nao morrem de falta de mana, se nao tiver mana o suficiente a habilidade nao pode ser ativada. Não pode haver 2 itens ou habilidades ou personagem com o mesmo nome. Se o item diver durabilidade 0 ele deve ser deletado automaticamente.
+1. Só o mestre monta o mundo, e só no setup de um save vazio. No início o programa analisa listaH, listaI e listaE: se estiverem no padrão, o mestre abre; depois de finalizar, nada mais muda no catálogo e o mestre não volta até o programa ser reiniciado. Não pode haver 2 itens, 2 habilidades ou 2 personagens com o mesmo nome (a comparação ignora o "#x ").
+
+2. Não há arquivo. Os "saves" servem para ter até 3 personagens na mesma execução, com o jogador podendo trocar entre eles, e tudo é esquecido quando o programa fecha. Mesmo assim, cada alteração é guardada no estado do save na hora em que acontece.
+
+3. Removi o sistema de turnos, o mapa e o movimento. Não há localização: as áreas (área afetada) servem só para descrever a habilidade.
+
+4. Não há inflação: o preço de um item fica fixo depois do setup, e o item na bolsa guarda o preço pago.
+
+5. Item com durabilidade 0 é deletado automaticamente.
+
+6. Não dá para comprar sem dinheiro: antes de comprar, o programa confere se há dinheiro suficiente; se não tiver, mostra mensagem de erro.
+
+7. Não dá para usar habilidade sem mana suficiente (se tiver 0 de mana, mostra mensagem de erro dizendo isso). Personagem não morre por falta de mana.
+
+8. HP pode ficar cheio: vida e mana nunca passam do máximo, o valor trava no teto.
+
+9. Quando a vida chega a 0, o personagem fica com status morto. Morto não usa item nem habilidade: só pode ser revivido. O efeito reviver devolve o personagem à vida com 1 de vida.
+
+10. O dono de um personagem não pode alterar os status dos outros personagens; quem mexe em tudo é o mestre, e só no setup.
+
+11. Modificar altera só a cópia daquele personagem, não o catálogo. Um livro é um item com efeito_causado "aprender", e o nome do livro é o nome da habilidade que ele ensina.
+
+12. Não tem nenhum sistema para personagens que voam.
 
 ## Quando algo dá errado
 
@@ -95,50 +138,65 @@ dinheiro
 
 ## Exemplo de uso
 
-=== MENU PRINCIPAL: SISTEMA DE RPG ===
-1. Painel do Mestre
-2. Gerenciar Personagem
-3. Inventário e Loja
-4. Combate e Habilidades
-0. Sair do Jogo
-Escolha uma opção: 2
+=== SALVAMENTO ===
+1. Save 1 - Cleber (vivo | 100/100)
+2. Save 2 - vazio
+3. Save 3 - vazio
+4. Excluir uma ficha
+0. Sair
+Escolha: 2
 
---- GERENCIAR PERSONAGEM ---
-1. Criar novo personagem
-2. Ver status de um personagem
-3. Voltar
-Escolha uma opção: 1
-
-Digite o nome: Cleber
+--- PAINEL DO MESTRE (mundo novo) ---
+1. Habilidades
+2. Itens
+3. Efeitos
+4. Criar personagem
+5. Finalizar mundo
+Escolha: 4
+Nome: Bianca
 Vida MAX: 100
 Mana MAX: 50
-Dinheiro Inicial: 200
-[!] Personagem 'Cleber' criado com sucesso!
+Dinheiro inicial: 200
+[!] Personagem 'Bianca' criado.
 
-(Voltando ao menu... O usuário adiciona os itens e habilidades...)
-[!] Itens 'Maçã', 'Espada' e 'Arco' adicionados ao inventário de Cleber.
-[!] Habilidades 'Bola de fogo', 'Impulso' e 'Defesa mágica' aprendidas!
+Escolha: 5
+[!] Mundo finalizado. Bem-vindo, Bianca!
 
---- GERENCIAR PERSONAGEM ---
-1. Criar novo personagem
-2. Ver status de um personagem
-3. Voltar
-Escolha uma opção: 2
-Digite o nome do personagem: Cleber
+=== MENU DO JOGADOR ===
+1. Status do personagem
+2. Inventário e Loja
+3. Habilidades
+4. Efeitos
+5. Dinheiro
+6. Trocar de personagem
+0. Voltar aos saves
+Escolha: 3
+
+--- HABILIDADES ---
+1. Usar habilidade
+2. Modificar habilidade
+3. Remover habilidade
+4. Status de habilidade
+0. Voltar
+Escolha: 1
+Nome da habilidade: #2 bola de fogo
+[!] Mana: 50 -> 35
+[!] O inimigo tomou 40 de dano, envenenamento, fadiga.
 
 === STATUS DA FICHA ===
-Nome: Cleber
-Vida (HP): 100/100  |  Mana (MP): 50/50  |  Dinheiro: $200
-Localização Atual: a1
+Nome: Bianca (vivo)
+Vida (HP): 65/100  |  Mana (MP): 35/50  |  Dinheiro: $200
 
-[ ITENS NO INVENTÁRIO ]
+[ ITENS ]
 - 1x Maçã
-- 1x Espada
-- 1x Arco
+- 1x Espada (Durabilidade 10/50)
 
 [ HABILIDADES ]
-- Bola de fogo (Custo: 15 MP | Área Afetada: 3x1)
-- Impulso (Custo: 5 MP)
-- Defesa Mágica (Custo: 20 MP)
+- #2 bola de fogo (Custo: 15 MP | Área Afetada: 3x1)
+- #5 impulso (Custo: 5 MP)
+
+[ EFEITOS ]
+- envenenado
+- fadiga
 =======================
 Pressione ENTER para voltar ao menu...
