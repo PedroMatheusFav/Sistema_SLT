@@ -16,10 +16,15 @@ private:
 
     // --- leitura robusta ---
     std::string lerLinha(const std::string& rotulo);
-    int lerInteiro(const std::string& rotulo);
-    bool lerSimNao(const std::string& rotulo);
+    int lerInteiro(const std::string& rotulo);  // so para os menus (0 = voltar)
+    // Campos de uma acao. Devolvem false quando o usuario digita "0"
+    // (cancela a acao) ou quando a entrada acaba.
+    bool lerTexto(const std::string& rotulo, std::string& saida);
+    bool lerNumero(const std::string& rotulo, int& saida);
+    bool lerConfirmacao(const std::string& rotulo, bool& saida);
     // Se o texto de efeitos tiver curar/dano/recuperar, pergunta o valor.
-    int perguntarValorSePreciso(const std::string& textoDeEfeitos);
+    // Devolve false se o usuario cancelar; senao poe o valor em "saida".
+    bool perguntarValorSePreciso(const std::string& textoDeEfeitos, int& saida);
 
     // --- telas ---
     void mostrarSaves() const;

@@ -253,31 +253,78 @@ int Interface::lerInteiro(const std::string& rotulo) {
     return 0;
 }
 
-bool Interface::lerSimNao(const std::string& rotulo) {
+// Campo de texto de uma acao. Digitar "0" cancela a acao inteira.
+bool Interface::lerTexto(const std::string& rotulo, std::string& saida) {
+    std::string linha = lerLinha(rotulo);
+    if (entradaAcabou) {
+        return false;
+    }
+    if (semEspacos(linha) == "0") {
+        aviso("acao cancelada.");
+        return false;
+    }
+    saida = linha;
+    return true;
+}
+
+// Campo numerico de uma acao. "0" cancela; texto errado repete a leitura.
+bool Interface::lerNumero(const std::string& rotulo, int& saida) {
+    while (!entradaAcabou) {
+        std::string linha = lerLinha(rotulo);
+        if (entradaAcabou) {
+            return false;
+        }
+        if (semEspacos(linha) == "0") {
+            aviso("acao cancelada.");
+            return false;
+        }
+        int valor;
+        if (textoParaInteiro(linha, valor)) {
+            saida = valor;
+            return true;
+        }
+        erro("'" + semEspacos(linha) +
+             "' nao e um numero. Digite 0 para cancelar.");
+    }
+    return false;
+}
+
+// Confirmacao s/n de uma acao. "0" cancela; outra resposta repete.
+bool Interface::lerConfirmacao(const std::string& rotulo, bool& saida) {
     while (!entradaAcabou) {
         std::string linha = lerLinha(rotulo);
         if (entradaAcabou) {
             return false;
         }
         std::string t = minusculas(semEspacos(linha));
+        if (t == "0") {
+            aviso("acao cancelada.");
+            return false;
+        }
         if (t == "s" || t == "sim") {
+            saida = true;
             return true;
         }
         if (t == "n" || t == "nao") {
-            return false;
+            saida = false;
+            return true;
         }
-        erro("responda 's' ou 'n'.");
+        erro("responda 's' ou 'n' (ou 0 para cancelar).");
     }
     return false;
 }
 
-int Interface::perguntarValorSePreciso(const std::string& textoDeEfeitos) {
+// Se o texto de efeitos tiver curar/dano/recuperar, pergunta o valor.
+// Devolve false se o usuario cancelar; senao poe o valor em "saida".
+bool Interface::perguntarValorSePreciso(const std::string& textoDeEfeitos,
+                                        int& saida) {
+    saida = 0;
     if (Personagem::contemEfeito(textoDeEfeitos, "curar") ||
         Personagem::contemEfeito(textoDeEfeitos, "dano") ||
         Personagem::contemEfeito(textoDeEfeitos, "recuperar")) {
-        return lerInteiro("Valor do efeito: ");
+        return lerNumero("Valor do efeito: ", saida);
     }
-    return 0;
+    return true;
 }
 
 void Interface::executar() {
@@ -326,8 +373,8 @@ void Interface::mostrarSaves() const {
 }
 
 void Interface::excluirFicha() {
-    int numero = lerInteiro("Numero do save (1 a 3): ");
-    if (entradaAcabou) {
+    int numero;
+    if (!lerNumero("Numero do save (1 a 3): ", numero)) {
         return;
     }
     if (numero < 1 || numero > saves.getQuantidade()) {
@@ -344,7 +391,11 @@ void Interface::excluirFicha() {
     const Personagem& p = saves.get(indice).getPersonagem();
     std::string pergunta = "deseja apagar a ficha de " + p.getNome() + " " +
                            (p.estaVivo() ? "vivo?" : "morto?") + " (s/n): ";
-    if (!lerSimNao(pergunta)) {
+    bool confirmou = false;
+    if (!lerConfirmacao(pergunta, confirmou)) {
+        return;
+    }
+    if (!confirmou) {
         aviso("nada foi apagado.");
         return;
     }
@@ -421,11 +472,20 @@ void Interface::criarPersonagemNoSave() {
         return;
     }
 
-    std::string nome = lerLinha("Nome: ");
-    int vidaMax = lerInteiro("Vida MAX: ");
-    int manaMax = lerInteiro("Mana MAX: ");
-    int dinheiro = lerInteiro("Dinheiro inicial: ");
-    if (entradaAcabou) {
+    std::string nome;
+    if (!lerTexto("Nome: ", nome)) {
+        return;
+    }
+    int vidaMax;
+    if (!lerNumero("Vida MAX: ", vidaMax)) {
+        return;
+    }
+    int manaMax;
+    if (!lerNumero("Mana MAX: ", manaMax)) {
+        return;
+    }
+    int dinheiro;
+    if (!lerNumero("Dinheiro inicial: ", dinheiro)) {
         return;
     }
 
@@ -456,14 +516,26 @@ void Interface::painelHabilidades() {
         if (op == 0) {
             return;
         } else if (op == 1) {
-            std::string nome = lerLinha("Nome: ");
-            std::string area = lerLinha("Area afetada: ");
-            std::string efeito =
-                lerLinha("Efeito causado (varios separados por ';'): ");
-            std::string descricao = lerLinha("Descricao: ");
-            int custo = lerInteiro("Custo (mana): ");
-            if (entradaAcabou) {
-                return;
+            std::string nome;
+            if (!lerTexto("Nome: ", nome)) {
+                continue;
+            }
+            std::string area;
+            if (!lerTexto("Area afetada: ", area)) {
+                continue;
+            }
+            std::string efeito;
+            if (!lerTexto("Efeito causado (varios separados por ';'): ",
+                          efeito)) {
+                continue;
+            }
+            std::string descricao;
+            if (!lerTexto("Descricao: ", descricao)) {
+                continue;
+            }
+            int custo;
+            if (!lerNumero("Custo (mana): ", custo)) {
+                continue;
             }
             if (c.addH(nome, area, efeito, descricao, custo)) {
                 aviso("habilidade adicionada.");
@@ -471,9 +543,9 @@ void Interface::painelHabilidades() {
                 erro("nome repetido ou mundo ja finalizado.");
             }
         } else if (op == 2) {
-            std::string nome = lerLinha("Nome: ");
-            if (entradaAcabou) {
-                return;
+            std::string nome;
+            if (!lerTexto("Nome: ", nome)) {
+                continue;
             }
             if (c.removerH(nome)) {
                 aviso("habilidade removida (virou tumba).");
@@ -502,15 +574,30 @@ void Interface::painelItens() {
         if (op == 0) {
             return;
         } else if (op == 1) {
-            std::string nome = lerLinha("Nome: ");
-            int preco = lerInteiro("Preco: ");
-            int durabMax = lerInteiro("Durabilidade maxima: ");
-            std::string descricao = lerLinha("Descricao: ");
-            std::string efeito =
-                lerLinha("Efeito causado (varios separados por ';'): ");
-            bool remendavel = lerSimNao("Remendavel? (s/n): ");
-            if (entradaAcabou) {
-                return;
+            std::string nome;
+            if (!lerTexto("Nome: ", nome)) {
+                continue;
+            }
+            int preco;
+            if (!lerNumero("Preco: ", preco)) {
+                continue;
+            }
+            int durabMax;
+            if (!lerNumero("Durabilidade maxima: ", durabMax)) {
+                continue;
+            }
+            std::string descricao;
+            if (!lerTexto("Descricao: ", descricao)) {
+                continue;
+            }
+            std::string efeito;
+            if (!lerTexto("Efeito causado (varios separados por ';'): ",
+                          efeito)) {
+                continue;
+            }
+            bool remendavel = false;
+            if (!lerConfirmacao("Remendavel? (s/n): ", remendavel)) {
+                continue;
             }
             if (c.addI(nome, preco, durabMax, descricao, efeito, remendavel)) {
                 aviso("item adicionado.");
@@ -518,9 +605,9 @@ void Interface::painelItens() {
                 erro("nome repetido ou mundo ja finalizado.");
             }
         } else if (op == 2) {
-            std::string nome = lerLinha("Nome: ");
-            if (entradaAcabou) {
-                return;
+            std::string nome;
+            if (!lerTexto("Nome: ", nome)) {
+                continue;
             }
             if (c.removerI(nome)) {
                 aviso("item removido (virou tumba).");
@@ -549,9 +636,9 @@ void Interface::painelEfeitos() {
         if (op == 0) {
             return;
         } else if (op == 1) {
-            std::string nome = lerLinha("Nome: ");
-            if (entradaAcabou) {
-                return;
+            std::string nome;
+            if (!lerTexto("Nome: ", nome)) {
+                continue;
             }
             if (c.addE(nome)) {
                 aviso("efeito adicionado.");
@@ -559,9 +646,9 @@ void Interface::painelEfeitos() {
                 erro("efeito repetido ou mundo ja finalizado.");
             }
         } else if (op == 2) {
-            std::string nome = lerLinha("Nome: ");
-            if (entradaAcabou) {
-                return;
+            std::string nome;
+            if (!lerTexto("Nome: ", nome)) {
+                continue;
             }
             if (c.removerE(nome)) {
                 aviso("efeito removido.");
@@ -666,9 +753,9 @@ void Interface::menuMorto() {
             continue;
         }
 
-        std::string nome = lerLinha("Item de reviver: ");
-        if (entradaAcabou) {
-            return;
+        std::string nome;
+        if (!lerTexto("Item de reviver: ", nome)) {
+            continue;
         }
 
         std::string mensagem;
@@ -703,9 +790,9 @@ void Interface::menuInventario() {
             return;
         } else if (op == 1) {
             mostrarCatalogoI(save.getCatalogo());
-            std::string entrada = lerLinha("Item (ex.: #7 maca): ");
-            if (entradaAcabou) {
-                return;
+            std::string entrada;
+            if (!lerTexto("Item (ex.: #7 maca): ", entrada)) {
+                continue;
             }
             const Item* item =
                 save.getCatalogo().buscarI(nomeSemId(entrada));
@@ -720,9 +807,9 @@ void Interface::menuInventario() {
             }
         } else if (op == 2) {
             mostrarBolsa(p);
-            std::string entrada = lerLinha("Item: ");
-            if (entradaAcabou) {
-                return;
+            std::string entrada;
+            if (!lerTexto("Item: ", entrada)) {
+                continue;
             }
             if (p.vender(nomeSemId(entrada))) {
                 aviso("item vendido.");
@@ -731,18 +818,16 @@ void Interface::menuInventario() {
             }
         } else if (op == 3) {
             mostrarBolsa(p);
-            std::string entrada = lerLinha("Item: ");
-            if (entradaAcabou) {
-                return;
+            std::string entrada;
+            if (!lerTexto("Item: ", entrada)) {
+                continue;
             }
             std::string nome = nomeSemId(entrada);
             const Item* naBolsa = itemDaBolsa(p, nome);
             int valor = 0;
-            if (naBolsa != 0) {
-                valor = perguntarValorSePreciso(naBolsa->getEfeitoCausado());
-            }
-            if (entradaAcabou) {
-                return;
+            if (naBolsa != 0 &&
+                !perguntarValorSePreciso(naBolsa->getEfeitoCausado(), valor)) {
+                continue;
             }
             std::string mensagem;
             if (p.usarItem(nome, valor, save.getCatalogo(), mensagem)) {
@@ -752,10 +837,13 @@ void Interface::menuInventario() {
             }
         } else if (op == 4) {
             mostrarBolsa(p);
-            std::string entrada = lerLinha("Item: ");
-            int valorPago = lerInteiro("Valor pago: ");
-            if (entradaAcabou) {
-                return;
+            std::string entrada;
+            if (!lerTexto("Item: ", entrada)) {
+                continue;
+            }
+            int valorPago;
+            if (!lerNumero("Valor pago: ", valorPago)) {
+                continue;
             }
             if (p.remendar(nomeSemId(entrada), valorPago)) {
                 aviso("item remendado.");
@@ -765,9 +853,9 @@ void Interface::menuInventario() {
             }
         } else if (op == 5) {
             mostrarBolsa(p);
-            std::string entrada = lerLinha("Item: ");
-            if (entradaAcabou) {
-                return;
+            std::string entrada;
+            if (!lerTexto("Item: ", entrada)) {
+                continue;
             }
             if (p.jogarNoLixo(nomeSemId(entrada))) {
                 aviso("item jogado no lixo.");
@@ -807,9 +895,9 @@ void Interface::menuVida() {
         if (op == 0) {
             return;
         } else if (op == 1) {
-            int valor = lerInteiro("Valor: ");
-            if (entradaAcabou) {
-                return;
+            int valor;
+            if (!lerNumero("Valor: ", valor)) {
+                continue;
             }
             if (valor <= 0) {
                 erro("o valor precisa ser maior que zero.");
@@ -821,9 +909,9 @@ void Interface::menuVida() {
                 aviso("nao curou nada (a vida ja esta cheia).");
             }
         } else if (op == 2) {
-            int valor = lerInteiro("Valor: ");
-            if (entradaAcabou) {
-                return;
+            int valor;
+            if (!lerNumero("Valor: ", valor)) {
+                continue;
             }
             if (valor <= 0) {
                 erro("o valor precisa ser maior que zero.");
@@ -836,17 +924,17 @@ void Interface::menuVida() {
                       std::to_string(p.getVidaMaxima()) + ".");
             }
         } else if (op == 3) {
-            int valor = lerInteiro("Valor: ");
-            if (entradaAcabou) {
-                return;
+            int valor;
+            if (!lerNumero("Valor: ", valor)) {
+                continue;
             }
             p.aumentarMaxVida(valor);
             aviso("vida maxima agora: " +
                   std::to_string(p.getVidaMaxima()) + ".");
         } else if (op == 4) {
-            int valor = lerInteiro("Valor: ");
-            if (entradaAcabou) {
-                return;
+            int valor;
+            if (!lerNumero("Valor: ", valor)) {
+                continue;
             }
             p.diminuirMaxVida(valor);
             aviso("vida maxima agora: " +
@@ -880,9 +968,9 @@ void Interface::menuMana() {
         if (op == 0) {
             return;
         } else if (op == 1) {
-            int valor = lerInteiro("Valor: ");
-            if (entradaAcabou) {
-                return;
+            int valor;
+            if (!lerNumero("Valor: ", valor)) {
+                continue;
             }
             if (valor <= 0) {
                 erro("o valor precisa ser maior que zero.");
@@ -894,9 +982,9 @@ void Interface::menuMana() {
                 aviso("nao recuperou nada (a mana ja esta cheia).");
             }
         } else if (op == 2) {
-            int valor = lerInteiro("Valor: ");
-            if (entradaAcabou) {
-                return;
+            int valor;
+            if (!lerNumero("Valor: ", valor)) {
+                continue;
             }
             if (p.gastarMana(valor)) {
                 aviso("gastou " + std::to_string(valor) + " de mana. Mana: " +
@@ -907,17 +995,17 @@ void Interface::menuMana() {
                      std::to_string(p.getManaAtual()) + ").");
             }
         } else if (op == 3) {
-            int valor = lerInteiro("Valor: ");
-            if (entradaAcabou) {
-                return;
+            int valor;
+            if (!lerNumero("Valor: ", valor)) {
+                continue;
             }
             p.aumentarMaxMana(valor);
             aviso("mana maxima agora: " +
                   std::to_string(p.getManaMaxima()) + ".");
         } else if (op == 4) {
-            int valor = lerInteiro("Valor: ");
-            if (entradaAcabou) {
-                return;
+            int valor;
+            if (!lerNumero("Valor: ", valor)) {
+                continue;
             }
             p.diminuirMaxMana(valor);
             aviso("mana maxima agora: " +
@@ -960,18 +1048,16 @@ void Interface::menuHabilidades() {
                           << lista[i].getCusto() << " MP | efeito: "
                           << lista[i].getEfeitoCausado() << ")\n";
             }
-            std::string entrada = lerLinha("Habilidade: ");
-            if (entradaAcabou) {
-                return;
+            std::string entrada;
+            if (!lerTexto("Habilidade: ", entrada)) {
+                continue;
             }
             std::string nome = nomeSemId(entrada);
             const Habilidade* naFicha = habilidadeDaFicha(p, nome);
             int valor = 0;
-            if (naFicha != 0) {
-                valor = perguntarValorSePreciso(naFicha->getEfeitoCausado());
-            }
-            if (entradaAcabou) {
-                return;
+            if (naFicha != 0 &&
+                !perguntarValorSePreciso(naFicha->getEfeitoCausado(), valor)) {
+                continue;
             }
             std::string mensagem;
             if (p.usarHabilidade(nome, valor, mensagem)) {
@@ -985,9 +1071,9 @@ void Interface::menuHabilidades() {
                  ++i) {
                 std::cout << "  " << lista[i].getEtiqueta() << "\n";
             }
-            std::string entrada = lerLinha("Habilidade a modificar: ");
-            if (entradaAcabou) {
-                return;
+            std::string entrada;
+            if (!lerTexto("Habilidade a modificar: ", entrada)) {
+                continue;
             }
             std::string nome = nomeSemId(entrada);
             const Habilidade* antiga = habilidadeDaFicha(p, nome);
@@ -997,14 +1083,26 @@ void Interface::menuHabilidades() {
             }
             int id = antiga->getId();
 
-            std::string novoNome = lerLinha("Novo nome: ");
-            std::string novaArea = lerLinha("Nova area afetada: ");
-            std::string novoEfeito =
-                lerLinha("Novo efeito causado (separe por ';'): ");
-            std::string novaDescricao = lerLinha("Nova descricao: ");
-            int novoCusto = lerInteiro("Novo custo (mana): ");
-            if (entradaAcabou) {
-                return;
+            std::string novoNome;
+            if (!lerTexto("Novo nome: ", novoNome)) {
+                continue;
+            }
+            std::string novaArea;
+            if (!lerTexto("Nova area afetada: ", novaArea)) {
+                continue;
+            }
+            std::string novoEfeito;
+            if (!lerTexto("Novo efeito causado (separe por ';'): ",
+                          novoEfeito)) {
+                continue;
+            }
+            std::string novaDescricao;
+            if (!lerTexto("Nova descricao: ", novaDescricao)) {
+                continue;
+            }
+            int novoCusto;
+            if (!lerNumero("Novo custo (mana): ", novoCusto)) {
+                continue;
             }
 
             if (p.modificarHabilidade(
@@ -1015,9 +1113,9 @@ void Interface::menuHabilidades() {
                 erro("nao deu para modificar.");
             }
         } else if (op == 3) {
-            std::string entrada = lerLinha("Habilidade a remover: ");
-            if (entradaAcabou) {
-                return;
+            std::string entrada;
+            if (!lerTexto("Habilidade a remover: ", entrada)) {
+                continue;
             }
             if (p.removerHabilidade(nomeSemId(entrada))) {
                 aviso("habilidade removida da ficha.");
@@ -1028,10 +1126,10 @@ void Interface::menuHabilidades() {
             mostrarStatusHabilidade();
         } else if (op == 5) {
             mostrarCatalogoH(save.getCatalogo());
-            std::string entrada =
-                lerLinha("Habilidade (ex.: #3 envenenamento em area): ");
-            if (entradaAcabou) {
-                return;
+            std::string entrada;
+            if (!lerTexto("Habilidade (ex.: #3 envenenamento em area): ",
+                          entrada)) {
+                continue;
             }
             const Habilidade* doCatalogo =
                 save.getCatalogo().buscarH(nomeSemId(entrada));
@@ -1051,8 +1149,8 @@ void Interface::menuHabilidades() {
 void Interface::mostrarStatusHabilidade() {
     Personagem& p = saves.getAtivo().getPersonagem();
 
-    std::string entrada = lerLinha("Habilidade: ");
-    if (entradaAcabou) {
+    std::string entrada;
+    if (!lerTexto("Habilidade: ", entrada)) {
         return;
     }
 
@@ -1111,8 +1209,9 @@ void Interface::menuEfeitos() {
                 ++it;
             }
 
-            // Le os numeros ate digitar 'n' ou acabar a lista.
+            // Le os numeros ate digitar 'n' ou acabar a lista. "0" cancela.
             std::vector<int> tirar;
+            bool cancelou = false;
             while (!entradaAcabou &&
                    static_cast<int>(tirar.size()) < total) {
                 std::string linha = lerLinha(
@@ -1124,14 +1223,22 @@ void Interface::menuEfeitos() {
                 if (t == "n" || t == "nao") {
                     break;
                 }
+                if (t == "0") {
+                    aviso("acao cancelada.");
+                    cancelou = true;
+                    break;
+                }
                 int pos;
                 if (textoParaInteiro(linha, pos)) {
                     tirar.push_back(pos);
                 } else {
-                    erro("digite um numero ou 'n'.");
+                    erro("digite um numero, 'n' ou 0 para cancelar.");
                 }
             }
 
+            if (cancelou) {
+                continue;  // nada foi tirado
+            }
             if (tirar.empty()) {
                 aviso("nenhum efeito tirado.");
             } else if (p.limparEfeitos(tirar)) {
@@ -1160,9 +1267,9 @@ void Interface::menuDinheiro() {
         if (op == 0) {
             return;
         } else if (op == 1) {
-            int valor = lerInteiro("Valor: ");
-            if (entradaAcabou) {
-                return;
+            int valor;
+            if (!lerNumero("Valor: ", valor)) {
+                continue;
             }
             if (p.gastarDinheiro(valor)) {
                 aviso("gastou $" + std::to_string(valor) + ".");
@@ -1170,9 +1277,9 @@ void Interface::menuDinheiro() {
                 erro("nao tem esse dinheiro.");
             }
         } else if (op == 2) {
-            int valor = lerInteiro("Valor: ");
-            if (entradaAcabou) {
-                return;
+            int valor;
+            if (!lerNumero("Valor: ", valor)) {
+                continue;
             }
             p.receberDinheiro(valor);
             aviso("recebeu $" + std::to_string(valor) + ".");
