@@ -597,7 +597,9 @@ void Interface::menuDoJogador() {
         std::cout << "3. Habilidades\n";
         std::cout << "4. Efeitos\n";
         std::cout << "5. Dinheiro\n";
-        std::cout << "6. Trocar de personagem\n";
+        std::cout << "6. Vida\n";
+        std::cout << "7. Mana\n";
+        std::cout << "8. Trocar de personagem\n";
         std::cout << "0. Voltar aos saves\n";
 
         int op = lerInteiro("Escolha: ");
@@ -605,7 +607,7 @@ void Interface::menuDoJogador() {
             return;
         }
 
-        if (op == 0 || op == 6) {
+        if (op == 0 || op == 8) {
             return;  // a tela de salvamento e quem troca de personagem
         } else if (op == 1) {
             mostrarStatus();
@@ -617,6 +619,10 @@ void Interface::menuDoJogador() {
             menuEfeitos();
         } else if (op == 5) {
             menuDinheiro();
+        } else if (op == 6) {
+            menuVida();
+        } else if (op == 7) {
+            menuMana();
         } else {
             erro("opcao invalida.");
         }
@@ -770,6 +776,155 @@ void Interface::menuInventario() {
             }
         } else if (op == 6) {
             mostrarBolsa(p);
+        } else {
+            erro("opcao invalida.");
+        }
+    }
+}
+
+void Interface::menuVida() {
+    Personagem& p = saves.getAtivo().getPersonagem();
+
+    while (!entradaAcabou) {
+        // Se morreu aqui dentro, para e deixa o menu do jogador cuidar.
+        if (!p.estaVivo()) {
+            return;
+        }
+
+        std::cout << "\n--- VIDA ---\n";
+        std::cout << "1. Curar\n";
+        std::cout << "2. Tomar dano\n";
+        std::cout << "3. Aumentar MAX\n";
+        std::cout << "4. Diminuir MAX\n";
+        std::cout << "5. Ver vida\n";
+        std::cout << "0. Voltar\n";
+
+        int op = lerInteiro("Escolha: ");
+        if (entradaAcabou) {
+            return;
+        }
+
+        if (op == 0) {
+            return;
+        } else if (op == 1) {
+            int valor = lerInteiro("Valor: ");
+            if (entradaAcabou) {
+                return;
+            }
+            if (valor <= 0) {
+                erro("o valor precisa ser maior que zero.");
+            } else if (p.curar(valor)) {
+                aviso("curou " + std::to_string(valor) + ". Vida: " +
+                      std::to_string(p.getVidaAtual()) + "/" +
+                      std::to_string(p.getVidaMaxima()) + ".");
+            } else {
+                aviso("nao curou nada (a vida ja esta cheia).");
+            }
+        } else if (op == 2) {
+            int valor = lerInteiro("Valor: ");
+            if (entradaAcabou) {
+                return;
+            }
+            if (valor <= 0) {
+                erro("o valor precisa ser maior que zero.");
+            } else if (p.dano(valor)) {
+                aviso("levou " + std::to_string(valor) +
+                      " de dano e morreu. Vida: 0.");
+            } else {
+                aviso("levou " + std::to_string(valor) + " de dano. Vida: " +
+                      std::to_string(p.getVidaAtual()) + "/" +
+                      std::to_string(p.getVidaMaxima()) + ".");
+            }
+        } else if (op == 3) {
+            int valor = lerInteiro("Valor: ");
+            if (entradaAcabou) {
+                return;
+            }
+            p.aumentarMaxVida(valor);
+            aviso("vida maxima agora: " +
+                  std::to_string(p.getVidaMaxima()) + ".");
+        } else if (op == 4) {
+            int valor = lerInteiro("Valor: ");
+            if (entradaAcabou) {
+                return;
+            }
+            p.diminuirMaxVida(valor);
+            aviso("vida maxima agora: " +
+                  std::to_string(p.getVidaMaxima()) + " (minimo 1).");
+        } else if (op == 5) {
+            aviso("vida: " + std::to_string(p.getVidaAtual()) + "/" +
+                  std::to_string(p.getVidaMaxima()) + ".");
+        } else {
+            erro("opcao invalida.");
+        }
+    }
+}
+
+void Interface::menuMana() {
+    Personagem& p = saves.getAtivo().getPersonagem();
+
+    while (!entradaAcabou) {
+        std::cout << "\n--- MANA ---\n";
+        std::cout << "1. Recuperar\n";
+        std::cout << "2. Gastar\n";
+        std::cout << "3. Aumentar MAX\n";
+        std::cout << "4. Diminuir MAX\n";
+        std::cout << "5. Ver mana\n";
+        std::cout << "0. Voltar\n";
+
+        int op = lerInteiro("Escolha: ");
+        if (entradaAcabou) {
+            return;
+        }
+
+        if (op == 0) {
+            return;
+        } else if (op == 1) {
+            int valor = lerInteiro("Valor: ");
+            if (entradaAcabou) {
+                return;
+            }
+            if (valor <= 0) {
+                erro("o valor precisa ser maior que zero.");
+            } else if (p.recuperar(valor)) {
+                aviso("recuperou " + std::to_string(valor) + " de mana. Mana: " +
+                      std::to_string(p.getManaAtual()) + "/" +
+                      std::to_string(p.getManaMaxima()) + ".");
+            } else {
+                aviso("nao recuperou nada (a mana ja esta cheia).");
+            }
+        } else if (op == 2) {
+            int valor = lerInteiro("Valor: ");
+            if (entradaAcabou) {
+                return;
+            }
+            if (p.gastarMana(valor)) {
+                aviso("gastou " + std::to_string(valor) + " de mana. Mana: " +
+                      std::to_string(p.getManaAtual()) + "/" +
+                      std::to_string(p.getManaMaxima()) + ".");
+            } else {
+                erro("mana insuficiente (tem " +
+                     std::to_string(p.getManaAtual()) + ").");
+            }
+        } else if (op == 3) {
+            int valor = lerInteiro("Valor: ");
+            if (entradaAcabou) {
+                return;
+            }
+            p.aumentarMaxMana(valor);
+            aviso("mana maxima agora: " +
+                  std::to_string(p.getManaMaxima()) + ".");
+        } else if (op == 4) {
+            int valor = lerInteiro("Valor: ");
+            if (entradaAcabou) {
+                return;
+            }
+            p.diminuirMaxMana(valor);
+            aviso("mana maxima agora: " +
+                  std::to_string(p.getManaMaxima()) + " (minimo 1).");
+        } else if (op == 5) {
+            aviso("mana: " + std::to_string(p.getManaAtual()) + "/" +
+                  std::to_string(p.getManaMaxima()) + ".");
         } else {
             erro("opcao invalida.");
         }

@@ -1,0 +1,46 @@
+3
+2
+1
+adaga afiada
+40
+20
+arma leve
+envenenado
+s
+3
+2
+maca
+0
+3
+1
+fadiga
+3
+0
+4
+Sombra
+80
+40
+300
+5
+2
+1
+#1 espada
+1
+#5 armadura de couro
+3
+#1 espada
+5
+#5 armadura de couro
+4
+#1 espada
+1
+6
+2
+#1 espada
+6
+0
+0
+4
+3
+s
+0

@@ -66,8 +66,9 @@ void Item::remendar(int valorPago) {
         return;
     }
 
-    // round(valor_pago / 2): com inteiros, a divisao ja descarta a metade.
-    durabAtual = durabAtual + (valorPago / 2);
+    // round(valor_pago / 2): (valorPago + 1) / 2 arredonda para cima quando
+    // sobra 1 ($5 -> 3), que e o que "round" pede.
+    durabAtual = durabAtual + ((valorPago + 1) / 2);
 
     // A durabilidade nunca passa da maxima.
     if (durabAtual > durabMax) {

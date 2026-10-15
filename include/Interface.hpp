@@ -36,6 +36,8 @@ private:
     void menuMorto();
     void mostrarStatus();
     void menuInventario();
+    void menuVida();
+    void menuMana();
     void menuHabilidades();
     void mostrarStatusHabilidade();
     void menuEfeitos();
