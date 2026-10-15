@@ -121,6 +121,8 @@ ações dinheiro:
 
 12. Não tem nenhum sistema para personagens que voam.
 
+13. quando o efeito é curar ou dano, o valor é perguntado ao jogador na hora.
+
 ## Quando algo dá errado
 
 deve mostrar um texto explicando o erro, por exemplo: habilidade x não pertence ao personagem y portanto nao pode ser usada.
