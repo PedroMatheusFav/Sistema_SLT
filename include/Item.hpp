@@ -36,6 +36,9 @@ public:
     // devolve false quando chegou a 0 (aí o item deve ser apagado).
     bool usarDurabilidade();
 
+    // Remendo: soma valorPago / 2 na durabilidade, sem passar do maximo.
+    void remendar(int valorPago);
+
     // Ordena pelo nome (para o std::sort) e compara pelo nome (std::find).
     bool operator<(const Item& outro) const;
     bool operator==(const Item& outro) const;

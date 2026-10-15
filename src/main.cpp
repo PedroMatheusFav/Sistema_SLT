@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <iostream>
+#include <list>
 #include <map>
 #include <set>
 #include <string>
@@ -11,6 +12,7 @@
 #include "Habilidade.hpp"
 #include "Item.hpp"
 #include "Mana.hpp"
+#include "Personagem.hpp"
 #include "Vida.hpp"
 
 // main TEMPORARIO: so serve para testar as classes das etapas 1 e 2.
@@ -259,6 +261,195 @@ static void testarCatalogo() {
               << (c.removerH("impulso") ? "ok" : "recusado") << "\n";
 }
 
+static void mostrarFicha(const Personagem& p) {
+    std::cout << "  Nome: " << p.getNome() << " ("
+              << (p.estaVivo() ? "vivo" : "morto") << ")\n";
+    std::cout << "  HP " << p.getVidaAtual() << "/" << p.getVidaMaxima()
+              << " | MP " << p.getManaAtual() << "/" << p.getManaMaxima()
+              << " | $" << p.getDinheiro().getQuantidade() << "\n";
+
+    std::cout << "  [ ITENS ]\n";
+    const std::vector<Item>& itens = p.getItens();
+    for (std::vector<Item>::size_type i = 0; i < itens.size(); ++i) {
+        std::cout << "    - " << itens[i].getEtiqueta() << " (durab "
+                  << itens[i].getDurabAtual() << "/" << itens[i].getDurabMax()
+                  << ", $" << itens[i].getPreco() << ")\n";
+    }
+
+    std::cout << "  [ HABILIDADES ]\n";
+    const std::vector<Habilidade>& hs = p.getHabilidades();
+    for (std::vector<Habilidade>::size_type i = 0; i < hs.size(); ++i) {
+        std::cout << "    - " << hs[i].getEtiqueta() << " (custo "
+                  << hs[i].getCusto() << " MP | efeito: "
+                  << hs[i].getEfeitoCausado() << ")\n";
+    }
+
+    std::cout << "  [ EFEITOS ]\n";
+    const std::list<Efeito>& ef = p.getEfeitos();
+    int n = 1;
+    std::list<Efeito>::const_iterator it = ef.begin();
+    while (it != ef.end()) {
+        std::cout << "    " << n << ". " << it->getNome() << "\n";
+        ++n;
+        ++it;
+    }
+}
+
+static void testarPersonagem() {
+    std::cout << "\n=== PERSONAGEM (roteiro completo) ===\n";
+
+    // --- o mestre monta o mundo ---
+    Catalogo c;
+    c.addE("envenenado");
+    c.addE("curar");
+    c.addE("dano");
+    c.addE("reviver");
+    c.addE("fadiga");
+    c.addH("bola de fogo", "3x1", "dano; envenenado", "joga uma bola de fogo",
+           15);
+    c.addI("espada", 50, 10, "uma espada curta", "", true);
+    c.addI("maca", 5, 1, "uma maca", "curar", false);
+    c.addI("bola de fogo", 20, 1, "livro que ensina bola de fogo",
+           "aprender", false);  // livro: nome = habilidade que ensina
+    c.addI("pocao de reviver", 30, 1, "traz de volta a vida", "reviver",
+           false);
+    c.addI("armadura real", 999, 20, "set completo", "", true);
+    c.finalizar();
+
+    // --- cria o personagem ---
+    Personagem p("Bianca", 100, 50, 200);
+    std::cout << "personagem criado:\n";
+    mostrarFicha(p);
+
+    // --- comprar ---
+    std::cout << "\ncomprar espada ($50) -> "
+              << (p.comprar(*c.buscarI("espada")) ? "ok" : "falhou") << "\n";
+    p.comprar(*c.buscarI("maca"));
+    p.comprar(*c.buscarI("bola de fogo"));    // o livro
+    p.comprar(*c.buscarI("pocao de reviver"));
+    std::cout << "comprar armadura real ($999) -> "
+              << (p.comprar(*c.buscarI("armadura real")) ? "ok" : "falhou")
+              << " (falta dinheiro)\n";
+    mostrarFicha(p);
+
+    // --- usar item e remendar ---
+    std::string msg;
+    p.usarItem("espada", 0, c, msg);
+    std::cout << "\n" << msg << "\n";
+
+    std::cout << "remendar espada pagando $10 -> "
+              << (p.remendar("espada", 10) ? "ok" : "falhou") << "\n";
+    std::cout << "remendar maca (nao remendavel) -> "
+              << (p.remendar("maca", 10) ? "ok" : "falhou") << "\n";
+
+    // --- livro ensina habilidade ---
+    p.usarItem("bola de fogo", 0, c, msg);
+    std::cout << msg << "\n";
+    mostrarFicha(p);
+
+    // --- usar habilidade: valor 40 no "dano" ---
+    std::cout << "\nusarHabilidade 'bola de fogo' (valor 40) -> "
+              << (p.usarHabilidade("bola de fogo", 40, msg) ? "ok" : "falhou")
+              << "\n";
+    std::cout << msg << "\n";
+
+    // --- efeito manual e limpeza ---
+    p.aplicarEfeito(Efeito("fadiga"));
+    std::cout << "tem o item 'espada'? " << (p.temItem("espada") ? "sim" : "nao")
+              << " | tem 'machado'? " << (p.temItem("machado") ? "sim" : "nao")
+              << "\n";
+    std::cout << "tem a habilidade 'bola de fogo'? "
+              << (p.temHabilidade("bola de fogo") ? "sim" : "nao") << "\n";
+
+    std::vector<int> tirar;
+    tirar.push_back(1);  // o 1o da lista de efeitos
+    tirar.push_back(1);  // repetido de proposito: nao pode tirar 2 efeitos
+    std::cout << "limpar o efeito numero 1 (pedido 2x) -> "
+              << (p.limparEfeitos(tirar) ? "ok" : "falhou") << "\n";
+    std::cout << "ficha depois da limpeza:\n";
+    mostrarFicha(p);
+
+    // --- sem mana ---
+    p.gastarMana(30);
+    std::cout << "\ngastar mana ate sobrar " << p.getManaAtual() << " -> usar "
+              << "'bola de fogo' (custa 15):\n  ";
+    if (p.usarHabilidade("bola de fogo", 40, msg)) {
+        std::cout << msg << "\n";
+    } else {
+        std::cout << "[erro] " << msg << "\n";
+    }
+
+    // --- morte e reviver ---
+    p.dano(999);
+    std::cout << "\ndano 999 -> vivo? " << (p.estaVivo() ? "sim" : "nao")
+              << " (HP " << p.getVidaAtual() << ")\n";
+
+    std::cout << "morto usar habilidade:\n  ";
+    if (p.usarHabilidade("bola de fogo", 40, msg)) {
+        std::cout << msg << "\n";
+    } else {
+        std::cout << "[erro] " << msg << "\n";
+    }
+
+    std::cout << "morto usar espada:\n  ";
+    if (p.usarItem("espada", 0, c, msg)) {
+        std::cout << msg << "\n";
+    } else {
+        std::cout << "[erro] " << msg << "\n";
+    }
+
+    std::cout << "usar item que nao existe:\n  ";
+    if (p.usarItem("machado", 0, c, msg)) {
+        std::cout << msg << "\n";
+    } else {
+        std::cout << "[erro] " << msg << "\n";
+    }
+
+    p.usarItem("pocao de reviver", 0, c, msg);
+    std::cout << msg << "\n";
+
+    // --- vender e jogar no lixo ---
+    std::cout << "\nvender maca -> " << (p.vender("maca") ? "ok" : "falhou")
+              << "\n";
+    std::cout << "jogarNoLixo espada -> "
+              << (p.jogarNoLixo("espada") ? "ok" : "falhou") << "\n";
+
+    // --- habilidade: modificar e remover ---
+    // Para modificar, mantenho o id que a copia ja tinha (a interface faz
+    // isso na etapa 6).
+    int idBolaDeFogo = 0;
+    const std::vector<Habilidade>& listaH = p.getHabilidades();
+    for (std::vector<Habilidade>::size_type i = 0; i < listaH.size(); ++i) {
+        if (listaH[i].getNome() == "bola de fogo") {
+            idBolaDeFogo = listaH[i].getId();
+        }
+    }
+    p.modificarHabilidade(
+        "bola de fogo",
+        Habilidade(idBolaDeFogo, "bola de fogo", "3x1", "dano", "muito forte",
+                   25));
+    std::cout << "modificar habilidade (custo agora 25):\n";
+    mostrarFicha(p);
+    std::cout << "removerHabilidade -> "
+              << (p.removerHabilidade("bola de fogo") ? "ok" : "falhou") << "\n";
+
+    std::cout << "\nficha final:\n";
+    mostrarFicha(p);
+    std::cout << "  [ EXTRATO ]\n";
+    const std::vector<std::string>& ex = p.getDinheiro().getExtrato();
+    for (std::vector<std::string>::size_type i = 0; i < ex.size(); ++i) {
+        std::cout << "    " << (i + 1) << ". " << ex[i] << "\n";
+    }
+
+    // --- morrer() direto tambem zera a vida ---
+    Personagem q("Teste", 30, 10, 0);
+    q.morrer();
+    std::cout << "\nmorrer() direto -> vivo? " << (q.estaVivo() ? "sim" : "nao")
+              << " | HP " << q.getVidaAtual() << "/" << q.getVidaMaxima() << "\n";
+    std::cout << "dano 10 num morto -> "
+              << (q.dano(10) ? "zerou" : "nao fez nada") << "\n";
+}
+
 int main() {
     testarVida();
     testarMana();
@@ -267,5 +458,6 @@ int main() {
     testarHabilidades();
     testarEfeitos();
     testarCatalogo();
+    testarPersonagem();
     return 0;
 }

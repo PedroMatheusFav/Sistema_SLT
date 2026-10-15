@@ -61,6 +61,20 @@ bool Item::usarDurabilidade() {
     return durabAtual > 0;
 }
 
+void Item::remendar(int valorPago) {
+    if (valorPago <= 0) {
+        return;
+    }
+
+    // round(valor_pago / 2): com inteiros, a divisao ja descarta a metade.
+    durabAtual = durabAtual + (valorPago / 2);
+
+    // A durabilidade nunca passa da maxima.
+    if (durabAtual > durabMax) {
+        durabAtual = durabMax;
+    }
+}
+
 bool Item::operator<(const Item& outro) const {
     return nome < outro.nome;
 }
